@@ -228,8 +228,6 @@ static blk_status_t virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
 	bool unmap = false;
 	u32 type;
 
-	BUG_ON(req->nr_phys_segments + 2 > vblk->sg_elems);
-
 	switch (req_op(req)) {
 	case REQ_OP_READ:
 	case REQ_OP_WRITE:
@@ -252,6 +250,10 @@ static blk_status_t virtio_queue_rq(struct blk_mq_hw_ctx *hctx,
 		WARN_ON_ONCE(1);
 		return BLK_STS_IOERR;
 	}
+
+	BUG_ON(type != VIRTIO_BLK_T_DISCARD &&
+	       type != VIRTIO_BLK_T_WRITE_ZEROES &&
+	       (req->nr_phys_segments + 2 > vblk->sg_elems));
 
 	vbr->out_hdr.type = cpu_to_virtio32(vblk->vdev, type);
 	vbr->out_hdr.sector = type ?
@@ -497,6 +499,10 @@ static int init_vq(struct virtio_blk *vblk)
 				   &num_vqs);
 	if (err)
 		num_vqs = 1;
+	if (!err && !num_vqs) {
+		dev_err(&vdev->dev, "MQ advertisted but zero queues reported\n");
+		return -EINVAL;
+	}
 
 	num_vqs = min_t(unsigned int, nr_cpu_ids, num_vqs);
 
