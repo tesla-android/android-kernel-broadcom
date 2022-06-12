@@ -69,7 +69,7 @@ while true; do
 		;;
 	"-O")
 		if [ -d $2 ];then
-			OUTPUT=$(echo $2 | sed 's/\/*$//')
+			OUTPUT=$(echo $2 | gsed 's/\/*$//')
 		else
 			echo "output directory $2 does not exist" 1>&2
 			exit 1
@@ -95,7 +95,7 @@ fi
 
 if [ -z "$KCONFIG_CONFIG" ]; then
 	if [ "$OUTPUT" != . ]; then
-		KCONFIG_CONFIG=$(readlink -m -- "$OUTPUT/.config")
+		KCONFIG_CONFIG=$(greadlink -m -- "$OUTPUT/.config")
 	else
 		KCONFIG_CONFIG=.config
 	fi
@@ -130,7 +130,7 @@ for ORIG_MERGE_FILE in $MERGE_LIST ; do
 		exit 1
 	fi
 	cat $ORIG_MERGE_FILE > $MERGE_FILE
-	CFG_LIST=$(sed -n -e "$SED_CONFIG_EXP1" -e "$SED_CONFIG_EXP2" $MERGE_FILE)
+	CFG_LIST=$(gsed -n -e "$SED_CONFIG_EXP1" -e "$SED_CONFIG_EXP2" $MERGE_FILE)
 
 	for CFG in $CFG_LIST ; do
 		grep -q -w $CFG $TMP_FILE || continue
@@ -155,9 +155,9 @@ for ORIG_MERGE_FILE in $MERGE_LIST ; do
 			echo Value of $CFG is redundant by fragment $ORIG_MERGE_FILE:
 		fi
 		if [ "$BUILTIN_FLAG" = "false" ]; then
-			sed -i "/$CFG[ =]/d" $TMP_FILE
+			gsed -i "/$CFG[ =]/d" $TMP_FILE
 		else
-			sed -i "/$CFG[ =]/d" $MERGE_FILE
+			gsed -i "/$CFG[ =]/d" $MERGE_FILE
 		fi
 	done
 	cat $MERGE_FILE >> $TMP_FILE
@@ -169,7 +169,7 @@ if [ "$STRICT_MODE_VIOLATED" = "true" ]; then
 fi
 
 if [ "$RUNMAKE" = "false" ]; then
-	cp -T -- "$TMP_FILE" "$KCONFIG_CONFIG"
+	gcp -T -- "$TMP_FILE" "$KCONFIG_CONFIG"
 	echo "#"
 	echo "# merged configuration written to $KCONFIG_CONFIG (needs make)"
 	echo "#"
@@ -191,7 +191,7 @@ make KCONFIG_ALLCONFIG=$TMP_FILE $OUTPUT_ARG $ALLTARGET
 
 
 # Check all specified config values took (might have missed-dependency issues)
-for CFG in $(sed -n -e "$SED_CONFIG_EXP1" -e "$SED_CONFIG_EXP2" $TMP_FILE); do
+for CFG in $(gsed -n -e "$SED_CONFIG_EXP1" -e "$SED_CONFIG_EXP2" $TMP_FILE); do
 
 	REQUESTED_VAL=$(grep -w -e "$CFG" $TMP_FILE)
 	ACTUAL_VAL=$(grep -w -e "$CFG" "$KCONFIG_CONFIG" || true)
