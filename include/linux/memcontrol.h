@@ -21,6 +21,7 @@
 #include <linux/vmstat.h>
 #include <linux/writeback.h>
 #include <linux/page-flags.h>
+#include <linux/android_vendor.h>
 
 struct mem_cgroup;
 struct obj_cgroup;
@@ -348,6 +349,15 @@ struct mem_cgroup {
 	struct deferred_split deferred_split_queue;
 #endif
 
+#ifdef CONFIG_LRU_GEN
+	/* per-memcg mm_struct list */
+	struct lru_gen_mm_list mm_list;
+#endif
+
+	/* for dynamic low */
+	ANDROID_VENDOR_DATA(1);
+	ANDROID_OEM_DATA_ARRAY(1, 2);
+
 	struct mem_cgroup_per_node *nodeinfo[];
 };
 
@@ -371,6 +381,8 @@ enum page_memcg_data_flags {
 #define MEMCG_DATA_FLAGS_MASK (__NR_MEMCG_DATA_FLAGS - 1)
 
 static inline bool PageMemcgKmem(struct page *page);
+
+void do_traversal_all_lruvec(void);
 
 /*
  * After the initialization objcg->memcg is always pointing at
@@ -442,6 +454,7 @@ static inline struct obj_cgroup *__page_objcg(struct page *page)
  * - LRU isolation
  * - lock_page_memcg()
  * - exclusive reference
+ * - mem_cgroup_trylock_pages()
  *
  * For a kmem page a caller should hold an rcu read lock to protect memcg
  * associated with a kmem page from being released.
@@ -497,6 +510,7 @@ static inline struct mem_cgroup *page_memcg_rcu(struct page *page)
  * - LRU isolation
  * - lock_page_memcg()
  * - exclusive reference
+ * - mem_cgroup_trylock_pages()
  *
  * For a kmem page a caller should hold an rcu read lock to protect memcg
  * associated with a kmem page from being released.
@@ -953,6 +967,23 @@ void unlock_page_memcg(struct page *page);
 
 void __mod_memcg_state(struct mem_cgroup *memcg, int idx, int val);
 
+/* try to stablize page_memcg() for all the pages in a memcg */
+static inline bool mem_cgroup_trylock_pages(struct mem_cgroup *memcg)
+{
+	rcu_read_lock();
+
+	if (mem_cgroup_disabled() || !atomic_read(&memcg->moving_account))
+		return true;
+
+	rcu_read_unlock();
+	return false;
+}
+
+static inline void mem_cgroup_unlock_pages(void)
+{
+	rcu_read_unlock();
+}
+
 /* idx can be of type enum memcg_stat_item or node_stat_item */
 static inline void mod_memcg_state(struct mem_cgroup *memcg,
 				   int idx, int val)
@@ -1002,6 +1033,7 @@ static inline unsigned long lruvec_page_state_local(struct lruvec *lruvec,
 }
 
 void mem_cgroup_flush_stats(void);
+void mem_cgroup_flush_stats_delayed(void);
 
 void __mod_memcg_lruvec_state(struct lruvec *lruvec, enum node_stat_item idx,
 			      int val);
@@ -1135,6 +1167,10 @@ static inline struct mem_cgroup *page_memcg_check(struct page *page)
 static inline bool PageMemcgKmem(struct page *page)
 {
 	return false;
+}
+
+static inline void do_traversal_all_lruvec(void)
+{
 }
 
 static inline bool mem_cgroup_is_root(struct mem_cgroup *memcg)
@@ -1357,6 +1393,18 @@ static inline void unlock_page_memcg(struct page *page)
 {
 }
 
+static inline bool mem_cgroup_trylock_pages(struct mem_cgroup *memcg)
+{
+	/* to match page_memcg_rcu() */
+	rcu_read_lock();
+	return true;
+}
+
+static inline void mem_cgroup_unlock_pages(void)
+{
+	rcu_read_unlock();
+}
+
 static inline void mem_cgroup_handle_over_high(void)
 {
 }
@@ -1419,6 +1467,10 @@ static inline unsigned long lruvec_page_state_local(struct lruvec *lruvec,
 }
 
 static inline void mem_cgroup_flush_stats(void)
+{
+}
+
+static inline void mem_cgroup_flush_stats_delayed(void)
 {
 }
 

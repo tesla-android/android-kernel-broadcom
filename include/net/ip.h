@@ -55,6 +55,7 @@ struct inet_skb_parm {
 #define IPSKB_DOREDIRECT	BIT(5)
 #define IPSKB_FRAG_PMTU		BIT(6)
 #define IPSKB_L3SLAVE		BIT(7)
+#define IPSKB_NOPOLICY		BIT(8)
 
 	u16			frag_max_size;
 };
@@ -344,6 +345,13 @@ static inline bool inet_is_local_reserved_port(struct net *net, unsigned short p
 	return test_bit(port, net->ipv4.sysctl_local_reserved_ports);
 }
 
+static inline bool inet_is_local_unbindable_port(struct net *net, unsigned short port)
+{
+	if (!net->ipv4.sysctl_local_unbindable_ports)
+		return false;
+	return test_bit(port, net->ipv4.sysctl_local_unbindable_ports);
+}
+
 static inline bool sysctl_dev_name_is_allowed(const char *name)
 {
 	return strcmp(name, "default") != 0  && strcmp(name, "all") != 0;
@@ -356,6 +364,11 @@ static inline bool inet_port_requires_bind_service(struct net *net, unsigned sho
 
 #else
 static inline bool inet_is_local_reserved_port(struct net *net, unsigned short port)
+{
+	return false;
+}
+
+static inline bool inet_is_local_unbindable_port(struct net *net, unsigned short port)
 {
 	return false;
 }
