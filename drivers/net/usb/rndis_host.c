@@ -581,7 +581,7 @@ EXPORT_SYMBOL_GPL(rndis_tx_fixup);
 
 static const struct driver_info	rndis_info = {
 	.description =	"RNDIS device",
-	.flags =	FLAG_ETHER | FLAG_POINTTOPOINT | FLAG_FRAMING_RN | FLAG_NO_SETINT,
+	.flags =	FLAG_ETHER | FLAG_FRAMING_RN | FLAG_NO_SETINT,
 	.bind =		rndis_bind,
 	.unbind =	rndis_unbind,
 	.status =	rndis_status,
@@ -591,7 +591,7 @@ static const struct driver_info	rndis_info = {
 
 static const struct driver_info	rndis_poll_status_info = {
 	.description =	"RNDIS device (poll status before control)",
-	.flags =	FLAG_ETHER | FLAG_POINTTOPOINT | FLAG_FRAMING_RN | FLAG_NO_SETINT,
+	.flags =	FLAG_ETHER | FLAG_FRAMING_RN | FLAG_NO_SETINT,
 	.data =		RNDIS_DRIVER_DATA_POLL_STATUS,
 	.bind =		rndis_bind,
 	.unbind =	rndis_unbind,
