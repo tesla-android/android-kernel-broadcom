@@ -90,7 +90,6 @@ struct rpivid_ctx {
 	struct v4l2_pix_format_mplane	dst_fmt;
 	int dst_fmt_set;
 
-	struct clk_request		*clk_req;
 	int 				src_stream_on;
 	int 				dst_stream_on;
 
@@ -186,6 +185,7 @@ struct rpivid_dev {
 	void __iomem		*base_h265;
 
 	struct clk		*clock;
+	unsigned long		max_clock_rate;
 
 	int			cache_align;
 
