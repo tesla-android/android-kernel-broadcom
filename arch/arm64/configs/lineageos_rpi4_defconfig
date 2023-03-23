@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.15.92 Kernel Configuration
+# Linux/arm64 5.15.94 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="Android (8508608, based on r450784e) clang version 14.0.7 (https://android.googlesource.com/toolchain/llvm-project 4c603efb0cca074e9238af8b4106c30add4418f6)"
 CONFIG_GCC_VERSION=0
@@ -4027,7 +4027,7 @@ CONFIG_SND_CTL_FAST_LOOKUP=y
 # CONFIG_SND_SEQUENCER is not set
 CONFIG_SND_DRIVERS=y
 # CONFIG_SND_DUMMY is not set
-CONFIG_SND_ALOOP=y
+# CONFIG_SND_ALOOP is not set
 # CONFIG_SND_MTPAV is not set
 # CONFIG_SND_SERIAL_U16550 is not set
 # CONFIG_SND_MPU401 is not set
