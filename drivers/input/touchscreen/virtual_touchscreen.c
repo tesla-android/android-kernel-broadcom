@@ -100,6 +100,8 @@ static int device_release(struct inode *inode, struct file *file) {
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
     const char* message = 
         "Usage: write the following commands to /dev/virtual_touchscreen:\n"
+        "    w num - set ABS_X_MAX(default 1024) \n"
+	"    h num - set ABS_Y_MAX(default 768) \n"
         "    x num  - move to (x, ...)\n"
         "    y num  - move to (..., y)\n"
         "    d 0    - touch down\n"
@@ -135,6 +137,14 @@ static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_
 	
 static void execute_command(char command, int arg1) {
     switch(command) {
+        case 'w':
+            input_set_abs_params(virt_ts_dev, ABS_X, ABS_X_MIN, arg1, 0, 0);
+            input_set_abs_params(virt_ts_dev, ABS_MT_POSITION_X, ABS_X_MIN, arg1, 0, 0);
+            break;
+        case 'h':
+            input_set_abs_params(virt_ts_dev, ABS_Y, ABS_Y_MIN, arg1, 0, 0);
+            input_set_abs_params(virt_ts_dev, ABS_MT_POSITION_Y, ABS_Y_MIN, arg1, 0, 0);
+            break;
         case 'x':
             input_report_abs(virt_ts_dev, ABS_X, arg1);
             break;
