@@ -11,9 +11,7 @@
 #define MODNAME "virtual_touchscreen"
 
 #define ABS_X_MIN	0
-#define ABS_X_MAX	1024
 #define ABS_Y_MIN	0
-#define ABS_Y_MAX	768
 
 #define MAX_CONTACTS 10    // 10 fingers is it
 
@@ -26,15 +24,18 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 static int Major;            /* Major number assigned to our device driver */
 static int Device_Open = 0;  /* Is device open?  Used to prevent multiple access to the device */
 
+static int ABS_X_MAX = 1024;
+static int ABS_Y_MAX = 768;
+
 struct class * cl;
-struct device * dev; 
+struct device * dev;
 
 struct file_operations fops __attribute__((__section__(".text"))) = {
        read: device_read,
        write: device_write,
        open: device_open,
        release: device_release
-};			
+};
 
 static struct input_dev *virt_ts_dev;
 
@@ -55,7 +56,7 @@ static int __init virt_ts_init(void)
 	virt_ts_dev->name = "Virtual touchscreen";
 	virt_ts_dev->phys = "virtual_ts/input0";
 
-    input_mt_init_slots(virt_ts_dev, MAX_CONTACTS, INPUT_MT_DIRECT);
+        input_mt_init_slots(virt_ts_dev, MAX_CONTACTS, INPUT_MT_DIRECT);
 
 	input_set_abs_params(virt_ts_dev, ABS_MT_POSITION_X, ABS_X_MIN, ABS_X_MAX, 0, 0);
 	input_set_abs_params(virt_ts_dev, ABS_MT_POSITION_Y, ABS_Y_MIN, ABS_Y_MAX, 0, 0);
@@ -67,7 +68,7 @@ static int __init virt_ts_init(void)
 
     /* Above is evdev part. Below is character device part */
 
-    Major = register_chrdev(0, DEVICE_NAME, &fops);	
+    Major = register_chrdev(0, DEVICE_NAME, &fops);
     if (Major < 0) {
 	printk ("Registering the character device failed with %d\n", Major);
 	    goto fail1;
@@ -91,17 +92,15 @@ static int device_open(struct inode *inode, struct file *file) {
     ++Device_Open;
     return 0;
 }
-	
+
 static int device_release(struct inode *inode, struct file *file) {
     --Device_Open;
     return 0;
 }
-	
+
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
-    const char* message = 
+    const char* message =
         "Usage: write the following commands to /dev/virtual_touchscreen:\n"
-        "    w num - set ABS_X_MAX(default 1024) \n"
-	"    h num - set ABS_Y_MAX(default 768) \n"
         "    x num  - move to (x, ...)\n"
         "    y num  - move to (..., y)\n"
         "    d 0    - touch down\n"
@@ -134,17 +133,9 @@ static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_
     *offset+=length;
     return length;
 }
-	
+
 static void execute_command(char command, int arg1) {
     switch(command) {
-        case 'w':
-            input_set_abs_params(virt_ts_dev, ABS_X, ABS_X_MIN, arg1, 0, 0);
-            input_set_abs_params(virt_ts_dev, ABS_MT_POSITION_X, ABS_X_MIN, arg1, 0, 0);
-            break;
-        case 'h':
-            input_set_abs_params(virt_ts_dev, ABS_Y, ABS_Y_MIN, arg1, 0, 0);
-            input_set_abs_params(virt_ts_dev, ABS_MT_POSITION_Y, ABS_Y_MIN, arg1, 0, 0);
-            break;
         case 'x':
             input_report_abs(virt_ts_dev, ABS_X, arg1);
             break;
@@ -239,6 +230,8 @@ static void __exit virt_ts_exit(void)
 module_init(virt_ts_init);
 module_exit(virt_ts_exit);
 
-MODULE_AUTHOR("Vitaly Shukela, vi0oss@gmail.com");
+MODULE_AUTHOR("Vitaly Shukela(vi0oss@gmail.com, Michał Gapiński (Tesla Android Project)");
 MODULE_DESCRIPTION("Virtual touchscreen driver");
+MODULE_PARM_DESC(ABS_X_MAX, "Maximum X coordinate for touchscreen");
+MODULE_PARM_DESC(ABS_Y_MAX, "Maximum Y coordinate for touchscreen");
 MODULE_LICENSE("GPL");
